@@ -6,10 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
 
 def cleaning(df):
-    columns_to_exclude = ['Ticket']
-
     df_cleaned = df.copy()
-    df_cleaned = df_cleaned.drop(columns=columns_to_exclude)
 
     # Calculate average age for males and females
     average_male_age = df_cleaned[df_cleaned['Sex'] == 'male']['Age'].mean()
@@ -25,6 +22,10 @@ def cleaning(df):
 
     # Fill missing values in 'Embarked' with 'C', which is the most common cabin 
     df_cleaned['Embarked'].fillna('C', inplace=True)
+
+    # One-hot encode the 'Embarked' column
+    embarked_mapping = {'C': 0, 'Q': 1, 'S': 2}
+    df_cleaned['Embarked'] = df_cleaned['Embarked'].map(embarked_mapping).astype(int)
 
     df_cleaned['Fare'].fillna(df_cleaned['Fare'].mean(), inplace=True)
 
@@ -97,37 +98,8 @@ def fearure_engineering(df):
     # Create 'Is_Child' feature
     df['Is_Child'] = (df['Age'] < 18).astype(int)
 
+    df['Ticket_With_Letters'] = df['Ticket'].str.contains('[a-zA-Z]').astype(int)
+
     # Drop Cabin colimn as it has to many NaN values 
-    df = df.drop(columns=['Name', 'Cabin', 'Title', 'Embarked'])
+    df = df.drop(columns=['Name', 'Cabin', 'Title', 'Fare', 'Ticket'])
     return df
-
-def model_evaluation(df):
-    features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch',
-       'Fare', 'Embarked', 'Cabin_Present', 'Title_Encoded', 'Married',
-       'Is_Rare_Title', 'Normalized_Fare', 'Fare_Category', 'Family_Size',
-       'Is_Alone', 'Family_Type', 'Is_Parent', 'Is_Child']
-    target = 'Survived'
-
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(df[features],
-        df[target],
-        test_size=0.2,
-        random_state=42
-    )
-
-    # Create a Decision Tree model
-    model = DecisionTreeClassifier(random_state=42)
-
-    # Fit the model on the training data
-    model.fit(X_train, y_train)
-
-    # Make predictions on the test data
-    y_pred = model.predict(X_test)
-
-    # Evaluate the model
-    accuracy = accuracy_score(y_test, y_pred)
-    conf_matrix = confusion_matrix(y_test, y_pred)
-
-    print(f"Accuracy: {accuracy:.4f}")
-    print("Confusion Matrix:")
-    print(conf_matrix)
