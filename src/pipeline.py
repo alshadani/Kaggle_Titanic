@@ -1,9 +1,8 @@
-# 
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.preprocessing import LabelEncoder
 
 def cleaning(df):
     df_cleaned = df.copy()
@@ -100,6 +99,19 @@ def fearure_engineering(df):
 
     df['Ticket_With_Letters'] = df['Ticket'].str.contains('[a-zA-Z]').astype(int)
 
+    # Create the 'Pclass_Embarked' feature by combining 'Pclass' and 'Embarked'
+    df['Pclass_Embarked'] = df['Pclass'].astype(str) + '_' + df['Embarked'].astype(str)
+
+    # Use LabelEncoder to encode 'Pclass_Embarked'
+    label_encoder = LabelEncoder()
+    df['Pclass_Embarked_Encoded'] = label_encoder.fit_transform(df['Pclass_Embarked'])
+
+    # Create a new feature by combining 'Ticket_With_Letters' and 'Pclass'
+    df['Ticket_Pclass_Combined'] = df['Ticket_With_Letters'].astype(str) + '_' + df['Pclass'].astype(str)
+
+    # Use LabelEncoder to encode the combined feature
+    df['Ticket_Pclass_Combined_Encoded'] = label_encoder.fit_transform(df['Ticket_Pclass_Combined'])
+
     # Drop Cabin colimn as it has to many NaN values 
-    df = df.drop(columns=['Name', 'Cabin', 'Title', 'Fare', 'Ticket'])
+    df = df.drop(columns=['Name', 'Cabin', 'Title', 'Fare', 'Ticket', 'Ticket_Pclass_Combined', 'Pclass_Embarked', 'Ticket_Pclass_Combined'])
     return df
