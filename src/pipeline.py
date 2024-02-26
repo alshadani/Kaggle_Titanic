@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.preprocessing import LabelEncoder
+import numpy as np 
 
 def cleaning(df):
     df_cleaned = df.copy()
@@ -23,8 +24,7 @@ def cleaning(df):
     df_cleaned['Embarked'].fillna('C', inplace=True)
 
     # One-hot encode the 'Embarked' column
-    embarked_mapping = {'C': 0, 'Q': 1, 'S': 2}
-    df_cleaned['Embarked'] = df_cleaned['Embarked'].map(embarked_mapping).astype(int)
+    df_cleaned = pd.get_dummies(df_cleaned, columns=['Embarked'], prefix='Embarked')
 
     df_cleaned['Fare'].fillna(df_cleaned['Fare'].mean(), inplace=True)
 
@@ -45,8 +45,9 @@ def fearure_engineering(df):
     # Encoding of the Cabin column 
     df['Cabin_Present'] = df['Cabin'].notnull().astype(int)
 
-    title_mapping = {'Mr': 0, 'Miss': 1, 'Mrs': 2}
-    df['Title_Encoded'] = df['Title'].map(title_mapping).fillna(3).astype(int)
+    df['Is_Mr'] = (df['Title'] == 'Mr').astype(int)
+    df['Is_Miss'] = (df['Title'] == 'Miss').astype(int)
+    df['Is_Mrs'] = (df['Title'] == 'Mrs').astype(int)
 
     # Feature indicating marital status
     df['Married'] = (df['Title'] == 'Mrs').astype(int)
@@ -72,6 +73,11 @@ def fearure_engineering(df):
     fare_category_mapping = {'0-25' : 0, '26-50' : 1, '51+' : 2}
     df['Fare_Category'] = df['Fare_Category'].map(fare_category_mapping)
 
+    df['Is_First_fare_category'] = (df['Fare_Category'] == '0-25').astype(int)
+    df['Is_Second_fare_category'] = (df['Fare_Category'] == '26-50').astype(int)
+    df['Is_Third_fare_category'] = (df['Fare_Category'] == '51+').astype(int)
+
+
     # Create 'Family_Size' feature
     df['Family_Size'] = df['Parch'] + df['SibSp']
 
@@ -91,6 +97,11 @@ def fearure_engineering(df):
 
     df['Family_Type'] = df['Family_Size'].apply(categorize_family_size)
 
+    df['Is_First_Family_Type'] = (df['Family_Size'] == 0).astype(int)
+    df['Is_Second_Family_Type'] = (df['Family_Size'] == 1).astype(int)
+    df['Is_Third_Family_Type'] = (df['Family_Size'] == 2).astype(int)
+    df['Is_Fourth_Family_Type'] = (df['Family_Size'] == 3).astype(int)
+
     # Create 'Is_Parent' feature
     df['Is_Parent'] = (df['Parch'] > 0).astype(int)
 
@@ -99,19 +110,13 @@ def fearure_engineering(df):
 
     df['Ticket_With_Letters'] = df['Ticket'].str.contains('[a-zA-Z]').astype(int)
 
-    # Create the 'Pclass_Embarked' feature by combining 'Pclass' and 'Embarked'
-    df['Pclass_Embarked'] = df['Pclass'].astype(str) + '_' + df['Embarked'].astype(str)
+    # Pclass encoded 
+    df['Is_First_Class'] = (df['Pclass'] == 1).astype(int)
+    df['Is_Second_Class'] = (df['Pclass'] == 2).astype(int)
+    df['Is_Third_Class'] = (df['Pclass'] == 3).astype(int)
 
-    # Use LabelEncoder to encode 'Pclass_Embarked'
-    label_encoder = LabelEncoder()
-    df['Pclass_Embarked_Encoded'] = label_encoder.fit_transform(df['Pclass_Embarked'])
-
-    # Create a new feature by combining 'Ticket_With_Letters' and 'Pclass'
-    df['Ticket_Pclass_Combined'] = df['Ticket_With_Letters'].astype(str) + '_' + df['Pclass'].astype(str)
-
-    # Use LabelEncoder to encode the combined feature
-    df['Ticket_Pclass_Combined_Encoded'] = label_encoder.fit_transform(df['Ticket_Pclass_Combined'])
 
     # Drop Cabin colimn as it has to many NaN values 
-    df = df.drop(columns=['Name', 'Cabin', 'Title', 'Fare', 'Ticket', 'Ticket_Pclass_Combined', 'Pclass_Embarked', 'Ticket_Pclass_Combined'])
+    df = df.drop(columns=['Pclass','Family_Type', 'Fare_Category', 'Name', 'Cabin', 'Title', 'Fare', 'Ticket'])
+
     return df
